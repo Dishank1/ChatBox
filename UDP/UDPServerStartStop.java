@@ -10,8 +10,8 @@ import java.util.*;
  * Allows multiple clients sending to the server at once
  * NOT multi-threaded because the amount of code to serve each
  * client request is short.
- * @author Pete Lutz
- * @version 9-16-2017
+ * @author Dishank Jhaveri, Tiffany Ellis
+  * @version 9-16-2017
  */
 public class UDPServerStartStop extends JFrame {
    // GUI Components

@@ -9,7 +9,7 @@ import java.util.*;
  * UDP Client1
  * Fairly complete client. Sends a message and awaits a reply
  * No Connect/Disconnect button ... connectionless
- * @author Pete Lutz
+ * @author Dishank Jhaveri, Tiffany Ellis
  * @version 11-8-2017
  */
 public class UDPClient1 extends JFrame implements ActionListener {

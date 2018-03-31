@@ -9,7 +9,7 @@ import java.util.*;
  * TCP Client1
  * Fairly complete client. Connects / disconnects / sends a message and awaits a reply
  * Connect/disconnect button allows multiple interactions
- * @author Pete Lutz
+ * @author Dishank Jhaveri, Tiffany Ellis
  * @version 9-16-2017
  */
 public class TCPClient1 extends JFrame implements ActionListener {

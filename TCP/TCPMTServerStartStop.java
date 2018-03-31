@@ -9,7 +9,7 @@ import java.util.*;
  * TCPMTServer ... goes with TCPClient1
  * Allows multiple connect/send/disconnect cycles
  * As many clients as we wish ... one thread per client
- * @author Pete Lutz
+ * @author Dishank Jhaveri, Tiffany Ellis
  * @version 9-16-2017
  */
 public class TCPMTServerStartStop extends JFrame {

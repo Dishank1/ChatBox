@@ -22,7 +22,10 @@ public class TCPMTServerStartStop extends JFrame {
    private ServerSocket sSocket = null;
    public static final int SERVER_PORT = 32001;
    private ServerThread serverThread = null;
-   
+   static Vector<ClientThread> activeClients = new Vector<>();
+     
+    // counter for clients
+    static int clientCount = 0;   
    /**
     * main - main program
     */
@@ -113,7 +116,9 @@ public class TCPMTServerStartStop extends JFrame {
             
             // Create a thread for the client
             ClientThread ct = new ClientThread(cSocket);
-            ct.start();      
+            activeClients.add(ct);
+            ct.start();
+            clientCount++;      
          }
       }
       
@@ -137,6 +142,8 @@ public class TCPMTServerStartStop extends JFrame {
       // socket, unique to that client
       private Socket cSocket;
       private String label = "";
+      private String name;
+      private PrintWriter pwt;
 
       // Constructor for ClientThread
       public ClientThread(Socket _cSocket) {
@@ -147,7 +154,7 @@ public class TCPMTServerStartStop extends JFrame {
       // main program for a ClientThread
       public void run() {
          Scanner scn = null;
-         PrintWriter pwt = null;
+         pwt = null;
          
          jtaLog.append(label + "Client connected!\n");
          
@@ -166,9 +173,12 @@ public class TCPMTServerStartStop extends JFrame {
          while(scn.hasNextLine()) {
             String message = scn.nextLine();
             jtaLog.append(label + "Received: " + message + "\n");
-            pwt.println(message.toUpperCase());
-            pwt.flush();
-            jtaLog.append(label + "Replied: " + message.toUpperCase() + "\n");
+            for(ClientThread ct : activeClients){
+               System.out.println(activeClients.size());
+                ct.pwt.println(message.toUpperCase());
+                ct.pwt.flush();
+            }
+             jtaLog.append(label + "Replied: " + message.toUpperCase() + "\n");
          }
      
          // on EOF, client has disconnected 
@@ -176,6 +186,7 @@ public class TCPMTServerStartStop extends JFrame {
             cSocket.close();
             scn.close();
             pwt.close();
+            //Make it so the print writers removed from the array
          }
          catch(IOException ioe) {
             jtaLog.append(label + "IO Exception (3): "+ ioe);

@@ -21,13 +21,24 @@ public class TCPClient1 extends JFrame implements ActionListener {
    private JButton jbConnect = new JButton("Connect");
 
    // These will be in Row2
+   //Name
+   private JLabel jlName = new JLabel("Name: ");
+   private JTextField jtfName = new JTextField(25);
+   private JButton jbSetName = new JButton("Set Name");
+
+   
+   // Components - CENTER
+   private JLabel jlLog = new JLabel("Log:", JLabel.LEFT);
+   private JTextArea jtaLog = new JTextArea(12, 35);
+   
+   //Components - East
+   private JLabel jlUsersOnline = new JLabel("Users Online",JLabel.LEFT);
+   private JTextArea jtaUsersOnline = new JTextArea(12,10);
+   
+   //Components - South
    private JLabel jlSentence = new JLabel("Sentence: ");
    private JTextField jtfSentence = new JTextField(25);
    private JButton jbSend = new JButton("Send");
-   
-   // Compoonents - CENTER
-   private JLabel jlLog = new JLabel("Log:", JLabel.LEFT);
-   private JTextArea jtaLog = new JTextArea(10, 35);
 
    // IO attributes
    private PrintWriter pwt = null;
@@ -36,6 +47,7 @@ public class TCPClient1 extends JFrame implements ActionListener {
    // OTHER attributes
    public static final int SERVER_PORT = 32001;
    private Socket socket = null;
+   private String name;
 
    /**
     * main program 
@@ -49,10 +61,15 @@ public class TCPClient1 extends JFrame implements ActionListener {
     */
    public TCPClient1() {
       this.setTitle("TCP Client");
-      this.setSize(475, 300);
-      this.setLocation(100, 50);
+       this.setSize(600, 400);
+      //this.setLocation(100, 50);
+      this.setLocationRelativeTo(null);  // *** this will center your app ***
+
       this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
       this.setResizable(false);
+      
+      //Set name to anonymous by default
+      name = "Anonymous";
       
       // NORTH ... GridLayout ... 
       // GridLayout and use the 1st two rows, Row1 and Row2 as JPanels
@@ -69,9 +86,9 @@ public class TCPClient1 extends JFrame implements ActionListener {
 
          // Row2 - Textfield for a sentence to send and Send button
          JPanel jpRow2 = new JPanel();
-            jpRow2.add(jlSentence);
-            jpRow2.add(jtfSentence);
-            jpRow2.add(jbSend);
+            jpRow2.add(jlName);
+            jpRow2.add(jtfName);
+            jpRow2.add(jbSetName);
             
             // jtfSentence and jbSend disabled until connected
             jtfSentence.setEnabled(false);
@@ -85,9 +102,21 @@ public class TCPClient1 extends JFrame implements ActionListener {
          jpCenter.add(new JScrollPane(jtaLog));
       this.add(jpCenter, BorderLayout.CENTER);
       
+      JPanel jpEast = new JPanel(new GridLayout(0,1));
+      //jpEast.add(jlUsersOnline);
+      jpEast.add(new JScrollPane(jtaUsersOnline));
+      this.add(jpEast, BorderLayout.EAST);
+      
+      JPanel jpSouth = new JPanel(new GridLayout(0,1));
+      jpSouth.add(jlSentence);
+      jpSouth.add(jtfSentence);
+      jpSouth.add(jbSend);
+      this.add(jpSouth, BorderLayout.SOUTH);
+      
       // Listen for the buttons
       jbConnect.addActionListener(this);
       jbSend.addActionListener(this);
+      jbSetName.addActionListener(this);
       
       this.setVisible(true);
    }
@@ -106,6 +135,9 @@ public class TCPClient1 extends JFrame implements ActionListener {
          case "Send":
             doSend();
             break;
+         case "Set Name":
+            doSetName();
+            break;
       }
    }
 
@@ -117,8 +149,9 @@ public class TCPClient1 extends JFrame implements ActionListener {
          // Connect to server and set up two streams, a Scanner for input from the
          // server and a PrintWriter for output to the server
          socket = new Socket(jtfServerIP.getText(), SERVER_PORT);
-         scn = new Scanner(new InputStreamReader(socket.getInputStream()));
-         pwt = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
+         ChatInner ci = new ChatInner(socket);
+         ci.start(); 
+
       }
       catch(IOException ioe) {
          jtaLog.append("IO Exception: " + ioe + "\n");
@@ -162,8 +195,61 @@ public class TCPClient1 extends JFrame implements ActionListener {
       pwt.flush();
       jtaLog.append("Sent: " + jtfSentence.getText() + "\n");
       jtfSentence.setText("");
-      String reply = scn.nextLine();
-      jtaLog.append("Reply: " + reply + "\n");
-   }
+      }
+   
+  private void doSetName(){
+   name = jtfName.getText();
+  }
+   
+   class ChatInner extends Thread   {
+      Socket cs;
+      public ChatInner(Socket cs)  {
+         this.cs = cs;
+      }
+      
+      /**
+      * Run method for threads to follow. The main communications between server and client. Will loop forever
+      * until the client disconnects.
+      */
+      public void run() {
+
+         BufferedReader br = null;
+      
+         try   {
+            // Socket connect to server
+            pwt = new PrintWriter(new OutputStreamWriter(cs.getOutputStream()));
+
+            br = new BufferedReader(new InputStreamReader(cs.getInputStream()));
+            jtaLog.setText("");
+            jtaLog.setText("Connected to Server \n");     
+            
+            while(true)  {
+               String serverMsg = br.readLine();    // reads that client is connected - from server
+              
+               // When Client recieves OK the append the following texts onto rec textarea.
+               if(serverMsg == null)  {
+                  JOptionPane.showMessageDialog(null, "Server Not Responding");
+               }
+               
+               else if(serverMsg!=null) {                  
+                  jtaLog.append(serverMsg+"\n");
+                  System.out.println("got here");
+               }
+               
+            }
+         
+         }
+         catch(UnknownHostException uhe) {
+			jtaLog.setText("Unable to connect to host.");
+			return;
+		   }
+         catch(NullPointerException npe)  {System.out.println("Server Not Responding");}
+		   catch(IOException ie) {
+		   	jtaLog.setText(ie.getMessage() + "\nIOException communicating with host.");
+		   	return;
+		   } 
+      } // End of RUn  
+   } // End of inner class
+
 
 }

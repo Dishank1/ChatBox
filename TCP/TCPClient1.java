@@ -16,9 +16,11 @@ public class TCPClient1 extends JFrame implements ActionListener {
    // Components - NORTH
    // NORTH will itself be GridLayout ... we will use Row1 and Row2 of the NORTH
    // These are for Row1
-   private JLabel jlServerIP = new JLabel("Server Name or IP: ");
+   private JLabel jlServerIP = new JLabel("Server IP: ");
    private JTextField jtfServerIP = new JTextField(20);
    private JButton jbConnect = new JButton("Connect");
+   private JLabel jlServerPort = new JLabel("Port: ");
+   private JTextField jtfServerPort = new JTextField(10);
 
    // These will be in Row2
    //Name
@@ -45,7 +47,7 @@ public class TCPClient1 extends JFrame implements ActionListener {
    private Scanner scn = null;
 
    // OTHER attributes
-   public static final int SERVER_PORT = 32001;
+   private int SERVER_PORT = 32001;
    private Socket socket = null;
    private String name;
 
@@ -61,7 +63,7 @@ public class TCPClient1 extends JFrame implements ActionListener {
     */
    public TCPClient1() {
       this.setTitle("TCP Client");
-       this.setSize(600, 400);
+       this.setSize(650, 400);
       //this.setLocation(100, 50);
       this.setLocationRelativeTo(null);  // *** this will center your app ***
 
@@ -81,6 +83,8 @@ public class TCPClient1 extends JFrame implements ActionListener {
          JPanel jpRow1 = new JPanel();
             jpRow1.add(jlServerIP);
             jpRow1.add(jtfServerIP);
+            jpRow1.add(jlServerPort);
+            jpRow1.add(jtfServerPort);
             jpRow1.add(jbConnect);
          jpNorth.add(jpRow1);
 
@@ -93,6 +97,7 @@ public class TCPClient1 extends JFrame implements ActionListener {
             // jtfSentence and jbSend disabled until connected
             jtfSentence.setEnabled(false);
             jbSend.setEnabled(false);
+            
          jpNorth.add(jpRow2);
       this.add(jpNorth, BorderLayout.NORTH);
       
@@ -105,7 +110,7 @@ public class TCPClient1 extends JFrame implements ActionListener {
       JPanel jpEast = new JPanel(new GridLayout(0,1));
       //jpEast.add(jlUsersOnline);
       jpEast.add(new JScrollPane(jtaUsersOnline));
-      this.add(jpEast, BorderLayout.EAST);
+     // this.add(jpEast, BorderLayout.EAST);
       
       JPanel jpSouth = new JPanel(new GridLayout(0,1));
       jpSouth.add(jlSentence);
@@ -163,6 +168,8 @@ public class TCPClient1 extends JFrame implements ActionListener {
       // Enable text field and Send button
       jtfSentence.setEnabled(true);
       jbSend.setEnabled(true);
+      jbSetName.setEnabled(false);
+      jtfName.setEnabled(false);
    }
 
    /**
@@ -172,7 +179,7 @@ public class TCPClient1 extends JFrame implements ActionListener {
       try {
          // Close the socket and streams
          socket.close();
-         scn.close();
+        // scn.close();
          pwt.close();
       }
       catch(IOException ioe) {
@@ -184,6 +191,9 @@ public class TCPClient1 extends JFrame implements ActionListener {
       // Disable text field and Send button
       jtfSentence.setEnabled(false);
       jbSend.setEnabled(false);
+      jbSetName.setEnabled(true);
+      jtfName.setEnabled(true);
+
    }
 
    /**
@@ -191,14 +201,20 @@ public class TCPClient1 extends JFrame implements ActionListener {
     */
    private void doSend() {
       // Get the sentence, send to server, wait for reply
-      pwt.println(jtfSentence.getText());
+      pwt.println("PWTSENDMESSAGE");
+      //pwt.flush();
+      pwt.println(name +": "+jtfSentence.getText());
       pwt.flush();
-      jtaLog.append("Sent: " + jtfSentence.getText() + "\n");
+      //jtaLog.append("Sent: " + jtfSentence.getText() + "\n");
       jtfSentence.setText("");
       }
    
   private void doSetName(){
-   name = jtfName.getText();
+   if(jtfName.getText().equals("")){
+      name = "Anonymous";
+   }else{
+      name = jtfName.getText();
+   }
   }
    
    class ChatInner extends Thread   {
@@ -221,7 +237,11 @@ public class TCPClient1 extends JFrame implements ActionListener {
 
             br = new BufferedReader(new InputStreamReader(cs.getInputStream()));
             jtaLog.setText("");
-            jtaLog.setText("Connected to Server \n");     
+            jtaLog.setText("Connected to Server \n");  
+            pwt.println("PWTUSERCONNECTED");
+            pwt.println(name);
+            pwt.flush();
+   
             
             while(true)  {
                String serverMsg = br.readLine();    // reads that client is connected - from server

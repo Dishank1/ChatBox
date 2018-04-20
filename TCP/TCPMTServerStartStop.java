@@ -172,13 +172,27 @@ public class TCPMTServerStartStop extends JFrame {
          // uppercase version
          while(scn.hasNextLine()) {
             String message = scn.nextLine();
-            jtaLog.append(label + "Received: " + message + "\n");
+            if(message.equals("PWTSENDMESSAGE")){
+            String realMessage = scn.nextLine();
+            System.out.println("real msg: "+realMessage);
+            
+            jtaLog.append(label + "Received: " + realMessage + "\n");
             for(ClientThread ct : activeClients){
-               System.out.println(activeClients.size());
-                ct.pwt.println(message.toUpperCase());
+              // System.out.println(activeClients.size());
+                ct.pwt.println(realMessage);
                 ct.pwt.flush();
             }
-             jtaLog.append(label + "Replied: " + message.toUpperCase() + "\n");
+             jtaLog.append(label + "Replied: " + realMessage + "\n");
+            }else if(message.equals("PWTUSERCONNECTED")){
+               System.out.println("name connected");
+               String userName = scn.nextLine();
+               jtaLog.append(userName + " has connected to the server");
+                for(ClientThread ct : activeClients){
+                ct.pwt.println(userName + " has connected to the server");
+                ct.pwt.flush();
+               }
+            }
+
          }
      
          // on EOF, client has disconnected 

@@ -20,10 +20,13 @@ public class UDPServerStartStop extends JFrame {
    private JTextArea jtaLog = new JTextArea(10, 35);
 
    // Socket stuff
-   private DatagramSocket socket = null;
+   private DatagramSocket socket;
+   private ArrayList<InetAddress> clAddresses;
+   private ArrayList<Integer> clPorts;
+   private HashSet<String> exClients;
    public static final int SERVER_PORT = 32001;
    public static final int PACKET_MAX = 1500;
-   private ServerThread serverThread = null;
+   private ServerThread serverThread;
    
    /**
     * main - main program
@@ -37,6 +40,14 @@ public class UDPServerStartStop extends JFrame {
     * Do server stuff
     */
    public UDPServerStartStop() {
+
+
+       clAddresses = new ArrayList<>();
+       clPorts = new ArrayList<>();
+       exClients = new HashSet<>();
+       socket = null;
+       serverThread = null;
+
       // Window setup
       this.setTitle("UDPServer");
       this.setSize(450, 250);
@@ -108,6 +119,9 @@ public class UDPServerStartStop extends JFrame {
             // await the reply
             try {
                socket.receive(requestPkt);
+
+
+
             }
             catch(IOException ioe) {
                if(ioe.toString().indexOf("socket closed") < 0 )
@@ -115,8 +129,22 @@ public class UDPServerStartStop extends JFrame {
                      "Failed Receive", JOptionPane.ERROR_MESSAGE);
                return;
             }
-            
-            // Get the string from the packet
+
+
+            InetAddress clientAddr = requestPkt.getAddress();
+            int port = requestPkt.getPort();
+
+
+            String id = clientAddr.toString()+" , "+port;
+            // adds client address and port to lists if id does not exist
+             if (!exClients.contains(id)) {
+                 exClients.add( id );
+                 clPorts.add( port );
+                 clAddresses.add(clientAddr);
+             }
+
+
+             // Get the string from the packet
             String requestStr = new String(requestPkt.getData(), requestPkt.getOffset(), requestPkt.getLength());
             jtaLog.append("REQUEST: " + requestStr + "\n");
             
@@ -126,18 +154,22 @@ public class UDPServerStartStop extends JFrame {
             // Build the packet. NOTE: We use the requestPkt's address and port to send this
             // reply back to whoever sent us the request
             byte[] reply = replyStr.getBytes();
-            DatagramPacket replyPkt = new DatagramPacket(reply, reply.length, 
-               requestPkt.getAddress(), requestPkt.getPort());
-            
-            // send the packet
-            try {
-               socket.send(replyPkt);
-            }
-            catch(IOException ioe) {
-               JOptionPane.showMessageDialog(null, "Cannot send packet: " + ioe,
-                  "Failed Send", JOptionPane.ERROR_MESSAGE);
-               return;
-            }
+            DatagramPacket replyPkt;
+
+             for (int i=0; i < clAddresses.size(); i++) {
+                 InetAddress cl = clAddresses.get(i);
+                 int cp = clPorts.get(i);
+                 replyPkt = new DatagramPacket(reply, reply.length, cl, cp);
+
+                 // send the packet
+                 try {
+                     socket.send(replyPkt);
+                 } catch (IOException ioe) {
+                     JOptionPane.showMessageDialog(null, "Cannot send packet: " + ioe,
+                             "Failed Send", JOptionPane.ERROR_MESSAGE);
+                     return;
+                 }
+             }
          }
       }
             

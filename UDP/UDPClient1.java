@@ -23,8 +23,13 @@ public class UDPClient1 extends JFrame implements ActionListener {
    private JLabel jlSentence = new JLabel("Sentence: ");
    private JTextField jtfSentence = new JTextField(25);
    private JButton jbSend = new JButton("Send");
+
+
+   private  JLabel jlName = new JLabel("Name");
+   private  JTextField jtfName = new JTextField(20);
+   private JButton jbSetName = new JButton("Set Name");
    
-   // Compoonents - CENTER
+   // Components - CENTER
    private JLabel jlLog = new JLabel("Log:", JLabel.LEFT);
    private JTextArea jtaLog = new JTextArea(10, 35);
 
@@ -34,6 +39,7 @@ public class UDPClient1 extends JFrame implements ActionListener {
    
    // OTHER attributes
    public static final int SERVER_PORT = 32001;
+   private  String name;
 
    /**
     * main program 
@@ -46,6 +52,9 @@ public class UDPClient1 extends JFrame implements ActionListener {
     * Constructor ... draw and set up GUI
     */
    public UDPClient1() {
+
+      this.name = "Anonymous";
+
       this.setTitle("UDP Client");
       this.setSize(475, 275);
       this.setLocation(100, 50);
@@ -64,14 +73,21 @@ public class UDPClient1 extends JFrame implements ActionListener {
             jpRow1.add(jtfServerIP);
          jpNorth.add(jpRow1);
 
+         JPanel jpRow3 = new JPanel();
+            jpRow3.add(jlName);
+            jpRow3.add(jtfName);
+            jpRow3.add(jbSetName);
+
          // Row2 - Textfield for a sentence to send and Send button
          JPanel jpRow2 = new JPanel();
             jpRow2.add(jlSentence);
             jpRow2.add(jtfSentence);
             jpRow2.add(jbSend);
-         jpNorth.add(jpRow2);
+         jpNorth.add(jpRow3);
       this.add(jpNorth, BorderLayout.NORTH);
-      
+
+      this.add(jpRow2, BorderLayout.SOUTH);
+
       // CENTER ... Label + text area
       JPanel jpCenter = new JPanel();
          jpCenter.add(jlLog);
@@ -80,12 +96,15 @@ public class UDPClient1 extends JFrame implements ActionListener {
       
       // Listen for the buttons
       jbSend.addActionListener(this);
-      
+      jbSetName.addActionListener(this);
+
       this.setVisible(true);
       
       // Open a DatagramSocket for IO
       try {
          socket = new DatagramSocket();
+          ChatInner ci = new ChatInner(socket);
+          ci.start();
       }
       catch(SocketException se) {
          JOptionPane.showMessageDialog(null, "Cannot create socket: " + se,
@@ -102,9 +121,25 @@ public class UDPClient1 extends JFrame implements ActionListener {
          case "Send":
             doSend();
             break;
+          case "Set Name":
+              doSetName();
+              break;
+
       }
    }
 
+
+
+   private  void doSetName() {
+      if(jtfName.getText().equals("")){
+          name =  "Anonymous";
+
+      }else{
+          name = jtfName.getText();
+      }
+
+
+   }
    /**
     * doSend - Send button'
     */
@@ -129,7 +164,7 @@ public class UDPClient1 extends JFrame implements ActionListener {
 
       
       // get the message and form a packet
-      String msgStr = jtfSentence.getText();
+      String msgStr = name + ": "+jtfSentence.getText();
       byte[] msg = msgStr.getBytes();
       DatagramPacket msgPkt = new DatagramPacket(msg, msg.length, serverIP, SERVER_PORT);
       
@@ -144,27 +179,76 @@ public class UDPClient1 extends JFrame implements ActionListener {
       }
 
          
-      jtaLog.append("SENT: " + msgStr + "\n");
+      //jtaLog.append("SENT: " + msgStr + "\n");
       
       // now, wait for the reply
       // Set up a buffer to hold the reply ... must be big enough for any reply
-      byte[] reply = new byte[msg.length];
-      // Make an empty DatagramPacket for the reply
-      DatagramPacket replyPkt = new DatagramPacket(reply, reply.length);
-      
-      // await the reply
-      try {
-         socket.receive(replyPkt);
-      }
-      catch(IOException ioe) {
-         JOptionPane.showMessageDialog(null, "Cannot receive packet: " + ioe,
-            "Failed Receive", JOptionPane.ERROR_MESSAGE);
-         return;
-      }
-      
-      // Get the string from the packet
-      String replyStr = new String(replyPkt.getData(), replyPkt.getOffset(), replyPkt.getLength());
-      jtaLog.append("REPLY: " + replyStr + "\n");
+
+//      byte[] reply = new byte[msg.length];
+//      // Make an empty DatagramPacket for the reply
+//      DatagramPacket replyPkt = new DatagramPacket(reply, reply.length);
+//
+//      // await the reply
+//      try {
+//         socket.receive(replyPkt);
+//      }
+//      catch(IOException ioe) {
+//         JOptionPane.showMessageDialog(null, "Cannot receive packet: " + ioe,
+//            "Failed Receive", JOptionPane.ERROR_MESSAGE);
+//         return;
+//      }
+//
+//      // Get the string from the packet
+//      String replyStr = new String(replyPkt.getData(), replyPkt.getOffset(), replyPkt.getLength());
+//      jtaLog.append("REPLY: " + replyStr + "\n");
    }
+
+    class ChatInner extends Thread   {
+        private DatagramSocket socket = null;
+        byte[] reply = new byte[1024];
+        // Make an empty DatagramPacket for the reply
+        DatagramPacket replyPkt = new DatagramPacket(reply, reply.length);
+
+        // await the reply
+
+
+      public ChatInner(DatagramSocket aSocket)  {
+
+          socket = aSocket;
+        }
+
+        /**
+         * Run method for threads to follow. The main communications between server and client. Will loop forever
+         * until the client disconnects.
+         */
+        public void run() {
+
+
+            try   {
+                // Socket connect to server
+
+                while(true)  {
+                    try {
+                        socket.receive(replyPkt);
+                    }
+                    catch(IOException ioe) {
+                        JOptionPane.showMessageDialog(null, "Cannot receive packet: " + ioe,
+                                "Failed Receive", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+
+                    // Get the string from the packet
+                    String replyStr = new String(replyPkt.getData(), replyPkt.getOffset(), replyPkt.getLength());
+                    jtaLog.append(replyStr + "\n");
+
+                }
+
+            }
+            catch(Exception e) {
+                System.err.println(e);
+            }
+        } // End of RUn
+    } // End of inner class
+
 
 }

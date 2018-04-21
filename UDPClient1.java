@@ -58,7 +58,7 @@ public class UDPClient1 extends JFrame implements ActionListener {
       this.setTitle("UDP Client");
       this.setSize(475, 275);
       this.setLocation(100, 50);
-      this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+      this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
       this.setResizable(false);
       
       // NORTH ... GridLayout ... 

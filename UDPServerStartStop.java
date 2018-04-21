@@ -52,7 +52,7 @@ public class UDPServerStartStop extends JFrame {
       this.setTitle("UDPServer");
       this.setSize(450, 250);
       this.setLocation(600, 50);
-      this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+      this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
       
       // NORTH components (Start/Stop button)
       JPanel jpNorth = new JPanel();

@@ -42,7 +42,7 @@ public class TCPMTServerStartStop extends JFrame {
       this.setTitle("TCPServer");
       this.setSize(450, 250);
       this.setLocation(600, 50);
-      this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+      this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
       
       // NORTH components (Start/Stop button)
       JPanel jpNorth = new JPanel();
@@ -172,27 +172,13 @@ public class TCPMTServerStartStop extends JFrame {
          // uppercase version
          while(scn.hasNextLine()) {
             String message = scn.nextLine();
-            if(message.equals("PWTSENDMESSAGE")){
-            String realMessage = scn.nextLine();
-            System.out.println("real msg: "+realMessage);
-            
-            jtaLog.append(label + "Received: " + realMessage + "\n");
+            jtaLog.append(label + "Received: " + message + "\n");
             for(ClientThread ct : activeClients){
-              // System.out.println(activeClients.size());
-                ct.pwt.println(realMessage);
+               System.out.println(activeClients.size());
+                ct.pwt.println(message.toUpperCase());
                 ct.pwt.flush();
             }
-             jtaLog.append(label + "Replied: " + realMessage + "\n");
-            }else if(message.equals("PWTUSERCONNECTED")){
-               System.out.println("name connected");
-               String userName = scn.nextLine();
-               jtaLog.append(userName + " has connected to the server");
-                for(ClientThread ct : activeClients){
-                ct.pwt.println(userName + " has connected to the server");
-                ct.pwt.flush();
-               }
-            }
-
+             jtaLog.append(label + "Replied: " + message.toUpperCase() + "\n");
          }
      
          // on EOF, client has disconnected 

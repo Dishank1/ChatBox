@@ -16,11 +16,13 @@ public class TCPMTServerStartStop extends JFrame {
    // GUI Components
    private JButton jbStart = new JButton("Start");
    private JLabel jlLog = new JLabel("Log:");
+   private JLabel jlServerPort = new JLabel("Port: ");
+   private JTextField jtfServerPort = new JTextField(10);
    private JTextArea jtaLog = new JTextArea(10, 35);
 
    // Socket stuff
    private ServerSocket sSocket = null;
-   public static final int SERVER_PORT = 32001;
+   public int SERVER_PORT = 32001;
    private ServerThread serverThread = null;
    static Vector<ClientThread> activeClients = new Vector<>();
      
@@ -42,11 +44,13 @@ public class TCPMTServerStartStop extends JFrame {
       this.setTitle("TCPServer");
       this.setSize(450, 250);
       this.setLocation(600, 50);
-      this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+      this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
       
       // NORTH components (Start/Stop button)
       JPanel jpNorth = new JPanel();
       jpNorth.setLayout(new FlowLayout(FlowLayout.RIGHT));
+      jpNorth.add(jlServerPort);
+      jpNorth.add(jtfServerPort);
       jpNorth.add(jbStart);
       this.add(jpNorth, BorderLayout.NORTH);
       jbStart.addActionListener(new ActionListener() {
@@ -72,14 +76,20 @@ public class TCPMTServerStartStop extends JFrame {
    } 
    
    public void doStart() {
-      jbStart.setText("Stop");
-
-      serverThread = new ServerThread();
-      serverThread.start();
+      if(jtfServerPort.getText().equals("")){
+            JOptionPane.showMessageDialog(null, "Invalid Port");
+        }else{
+              SERVER_PORT = Integer.parseInt(jtfServerPort.getText());
+              jbStart.setText("Stop");
+              jtfServerPort.setEditable(false);
+              serverThread = new ServerThread(SERVER_PORT);
+              serverThread.start();
+      }
    }
    
    public void doStop() {
       jbStart.setText("Start");
+      jtfServerPort.setEditable(true);
       serverThread.stopServer();
    }
    
@@ -89,10 +99,15 @@ public class TCPMTServerStartStop extends JFrame {
     * Also, the stop method will stop the server
     */
    class ServerThread extends Thread {
+      int aSERVER_PORT;
+      
+      public ServerThread(int serverPort){
+         aSERVER_PORT = serverPort;
+      }
       public void run() {
          // Server stuff ... wait for a connection and process it
          try {
-            sSocket = new ServerSocket(SERVER_PORT);
+            sSocket = new ServerSocket(aSERVER_PORT);
          }
          catch(IOException ioe) {
             jtaLog.append("IO Exception (1): "+ ioe);
@@ -172,13 +187,27 @@ public class TCPMTServerStartStop extends JFrame {
          // uppercase version
          while(scn.hasNextLine()) {
             String message = scn.nextLine();
-            jtaLog.append(label + "Received: " + message + "\n");
+            if(message.equals("PWTSENDMESSAGE")){
+            String realMessage = scn.nextLine();
+            System.out.println("real msg: "+realMessage);
+            
+            jtaLog.append(label + "Received: " + realMessage + "\n");
             for(ClientThread ct : activeClients){
-               System.out.println(activeClients.size());
-                ct.pwt.println(message.toUpperCase());
+              // System.out.println(activeClients.size());
+                ct.pwt.println(realMessage);
                 ct.pwt.flush();
             }
-             jtaLog.append(label + "Replied: " + message.toUpperCase() + "\n");
+             jtaLog.append(label + "Replied: " + realMessage + "\n");
+            }else if(message.equals("PWTUSERCONNECTED")){
+               System.out.println("name connected");
+               String userName = scn.nextLine();
+               jtaLog.append(userName + " has connected to the server");
+                for(ClientThread ct : activeClients){
+                ct.pwt.println(userName + " has connected to the server");
+                ct.pwt.flush();
+               }
+            }
+
          }
      
          // on EOF, client has disconnected 
